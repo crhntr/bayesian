@@ -93,16 +93,16 @@ type Classifier struct {
 	// called ConverTermsFreqToTfIdf
 }
 
-// serializableClassifier represents a container for
+// SerializableClassifier represents a container for
 // Classifier objects whose fields are modifiable by
 // reflection and are therefore writeable by gob.
-type serializableClassifier struct {
-	Classes         []Class
-	Learned         int
-	Seen            int
-	Datas           map[Class]*classData
-	TfIdf           bool
-	DidConvertTfIdf bool
+type SerializableClassifier struct {
+	Classes         []Class              `json:"classes" bson:"classes,omitempty"`
+	Learned         int                  `json:"learned" bson:"learned,omitempty"`
+	Seen            int                  `json:"seen" bson:"seen,omitempty"`
+	Datas           map[Class]*classData `json:"datas" bson:"datas,omitempty"`
+	TfIdf           bool                 `json:"tf_idf" bson:"tf_idf,omitempty"`
+	DidConvertTfIdf bool                 `json:"did_convert_tf_idf" bson:"did_convert_tf_idf,omitempty"`
 }
 
 // classData holds the frequency data for words in a
@@ -224,7 +224,7 @@ func NewClassifierFromFile(name string) (c *Classifier, err error) {
 //This actually does the deserializing of a Gob encoded classifier
 func NewClassifierFromReader(r io.Reader) (c *Classifier, err error) {
 	dec := gob.NewDecoder(r)
-	w := new(serializableClassifier)
+	w := new(SerializableClassifier)
 	err = dec.Decode(w)
 
 	return &Classifier{w.Classes, w.Learned, int32(w.Seen), w.Datas, w.TfIdf, w.DidConvertTfIdf}, err
@@ -554,11 +554,10 @@ func (c *Classifier) WriteClassToFile(name Class, rootPath string) (err error) {
 }
 
 // Serialize this classifier to GOB and write to Writer.
-func (c *Classifier) WriteTo(w io.Writer) (err error) {
+func (c *Classifier) WriteTo(w io.Writer) error {
 	enc := gob.NewEncoder(w)
-	err = enc.Encode(&serializableClassifier{c.Classes, c.learned, int(c.seen), c.datas, c.tfIdf, c.DidConvertTfIdf})
-
-	return
+	err := enc.Encode(&SerializableClassifier{c.Classes, c.learned, int(c.seen), c.datas, c.tfIdf, c.DidConvertTfIdf})
+	return err
 }
 
 // ReadClassFromFile loads existing class data from a
